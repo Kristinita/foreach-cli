@@ -1,7 +1,6 @@
 fs = require 'fs-extra'
 fs.createOutputStream = require 'create-output-stream'
 lcovParse = require 'lcov-parse'
-request = require 'request'
 svg2png = require 'svg2png'
 
 
@@ -11,7 +10,7 @@ genBadgeUrl = (label, value, color)->
 
 ## ==========================================================================
 ## Coverage
-## ========================================================================== 
+## ==========================================================================
 calcCoverage = (lcov)->
 	percentages =
 		'functions': lcov.functions.hit / lcov.functions.found
@@ -26,25 +25,30 @@ calcCoverage = (lcov)->
 		when percent > 90 then 'yellow'
 		when percent > 85 then 'orange'
 		else 'red'
-	
+
 	{coverage, color}
 
 
 downloadBadge = (name)->
 	lcovDirPath = "test/coverage/#{name}"
 	destPath = ".config/badges/coverage-#{name}"
-	
+
 	fs.ensureDir lcovDirPath, ()->
 		lcovParse "#{lcovDirPath}/lcov.info", (err, parsed)-> if err then console.warn(err) else
 			values = calcCoverage(parsed[0])
-			
-			request genBadgeUrl("coverage (#{name})", values.coverage, values.color)
-				.pipe fs.createOutputStream("#{destPath}.svg")
-				
-				.on 'finish', (err)-> if err then console.error(err) else
+
+			fetch genBadgeUrl("coverage (#{name})", values.coverage, values.color)
+			.then (response) ->
+				if !response.ok
+					throw new Error("HTTP error! status: #{response.status}")
+				writeStream = fs.createOutputStream("#{destPath}.svg")
+				response.body.pipe writeStream
+				writeStream.on 'finish', (err)-> if err then console.error(err) else
 					fs.readFile "#{destPath}.svg", (err, svgBuffer)-> if err then console.error(err) else
 						svg2png(svgBuffer).then (pngBuffer)->
 							fs.outputFile "#{destPath}.png", pngBuffer
+			.catch (error) ->
+				console.error('Fetch error:', error)
 
 
 downloadBadge('node')
