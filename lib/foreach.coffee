@@ -7,7 +7,7 @@ exec = require('child_process').exec
 regEx = require './regex'
 
 
-module.exports = (options)-> new Promise (finish)->
+module.exports = (options)-> new Promise (finish, fail)->
 	finalLogs = 'log':{}, 'error':{}
 	globOptions = {}
 	if options.ignore then globOptions.ignore = options.ignore
@@ -72,7 +72,8 @@ module.exports = (options)-> new Promise (finish)->
 		# Remove the glob prefix to get relative directory
 		relativeDir = normalizedDirPath
 			.replace(relativeGlobPath, '')
-			.replace(/^\//, '')  # Remove leading slash if any
+			# Remove leading slash if any
+			.replace(/^\//, '')
 
 		# Handle case where pathParams.dir equals the glob path (file in root)
 		if relativeDir == '.' then relativeDir = ''
@@ -107,10 +108,7 @@ module.exports = (options)-> new Promise (finish)->
 			console.log chalk.bgRed.white.bold("Error")+' '+chalk.dim(file)
 			console.log formatOutputMessage(message)
 
-		finish()
-
-
-
-
-
-
+		if Object.keys(finalLogs.error).length
+			fail()
+		else
+			finish()
