@@ -25,6 +25,9 @@ module.exports = (options)-> new Promise (finish, fail)->
 
 	executeCommand = (filePath)-> new Promise (resolve, reject)->
 		pathParams = path.parse path.resolve(filePath)
+		# Normalize path components to use forward slashes for consistency across platforms
+		pathParams.dir = pathParams.dir.replace(/\\/g, '/') if pathParams.dir
+		pathParams.root = pathParams.root.replace(/\\/g, '/') if pathParams.root
 		pathParams.reldir = getDirName(pathParams, path.resolve(filePath))
 
 		command = options.command.replace regEx.placeholder, (entire, placeholder)-> switch
@@ -36,7 +39,10 @@ module.exports = (options)-> new Promise (finish, fail)->
 			command = "FORCE_COLOR=true #{command}"
 
 		exec command, (err, stdout, stderr)->
-			if isValidOutput(stdout) then finalLogs.log[filePath] = stdout
+			# Remove surrounding quotes from output for Windows compatibility
+			if isValidOutput(stdout)
+				cleanedStdout = stdout?.replace(/^"|"$/g, '')
+				finalLogs.log[filePath] = cleanedStdout
 
 			if isValidOutput(stderr) and not isValidOutput(err)
 				finalLogs.log[filePath] = stderr
@@ -88,10 +94,12 @@ module.exports = (options)-> new Promise (finish, fail)->
 		)
 
 	formatOutputMessage = (message)->
+		# Remove surrounding quotes from message for Windows compatibility
+		cleanedMessage = message?.replace(/^"|"$/g, '')
 		if options.trim
-			message.slice(0, options.trim)
+			cleanedMessage.slice(0, options.trim)
 		else
-			message
+			cleanedMessage
 
 
 

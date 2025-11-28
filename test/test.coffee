@@ -9,16 +9,16 @@ bin = PATH.resolve 'bin'
 parsePlaceholdersResult = (result) ->
 	parsedResults = { lines: undefined, linesMap: {} }
 	parsedResults.lines = result.split('\n').filter (validLine)-> validLine
-	
+
 	parsedResults.lines.forEach (resultLine) ->
 		placeHoldersObj = {}
 		placeHolders = resultLine.split(' ')
-		placeHoldersObj.name = placeHolders[0]
-		placeHoldersObj.ext = placeHolders[1]
-		placeHoldersObj.base = placeHolders[2]
-		placeHoldersObj.reldir = placeHolders[3]
-		placeHoldersObj.path = placeHolders[4]
-		placeHoldersObj.dir = placeHolders[5]
+		placeHoldersObj.name = placeHolders[0]?.replace(/^"|"$/g, '')
+		placeHoldersObj.ext = placeHolders[1]?.replace(/^"|"$/g, '')
+		placeHoldersObj.base = placeHolders[2]?.replace(/^"|"$/g, '')
+		placeHoldersObj.reldir = placeHolders[3]?.replace(/^"|"$/g, '')
+		placeHoldersObj.path = placeHolders[4]?.replace(/^"|"$/g, '')
+		placeHoldersObj.dir = placeHolders[5]?.replace(/^"|"$/g, '')
 		parsedResults.linesMap[placeHoldersObj.path] = placeHoldersObj
 
 	return parsedResults
@@ -27,7 +27,7 @@ parsePlaceholdersResult = (result) ->
 suite "ForEach-cli", ()->
 	suiteSetup (done)-> fs.ensureDir 'test/temp', done
 	suiteTeardown (done)-> fs.remove 'test/temp', done
-	
+
 	test "Will execute a given command on all matched files/dirs in a given glob when using explicit arguments", ()->
 		execa(bin, ['-g', 'test/samples/sass/css/*', '-x', 'echo {{base}} >> test/temp/one']).then (err)->
 			result = fs.readFileSync 'test/temp/one', {encoding:'utf8'}
@@ -39,7 +39,7 @@ suite "ForEach-cli", ()->
 			expect(resultLines.find (line) -> line == 'main.copy.css').to.be.truthy
 			expect(resultLines.find (line) -> line == 'main.css').to.be.truthy
 
-	
+
 	test "Will execute a given command on all matched files/dirs in a given glob when using positional arguments", ()->
 		execa(bin, ['test/samples/sass/css/*', 'echo {{base}} >> test/temp/two']).then (err)->
 			result = fs.readFileSync 'test/temp/two', {encoding:'utf8'}
@@ -49,13 +49,13 @@ suite "ForEach-cli", ()->
 			expect(resultLines.find (line) -> line == 'foldr.css').to.be.truthy
 			expect(resultLines.find (line) -> line == 'main.copy.css').to.be.truthy
 			expect(resultLines.find (line) -> line == 'main.css').to.be.truthy
-	
+
 
 
 	test "Placeholders can be used in the command which will be dynamically filled according to the subject path", ()->
 		execa(bin, ['-g', 'test/samples/sass/css/**/*', '-x', 'echo "{{name}} {{ext}} {{base}} {{reldir}} {{path}} {{dir}}" >> test/temp/three']).then (err)->
 			result = fs.readFileSync 'test/temp/three', {encoding:'utf8'}
-			
+
 			parsedResult = parsePlaceholdersResult(result)
 
 			# Check length
@@ -68,9 +68,11 @@ suite "ForEach-cli", ()->
 				' test/samples/sass/css/main.copy.css ',
 				' test/samples/sass/css/main.css '
 			].forEach (path) -> expect(result.includes(path)).to.be.truthy
-			
-			
-			# We are using mapping to make tests pure, as Listr run doesn't gurantee the order of execution
+
+
+			# Normalized path for cross-platform compatibility
+			normalizedCwd = process.cwd().replace(/\\/g, '/')
+			# We are using mapping to make tests pure, as Listr run doesn't guarantee the order of execution
 			expectedResults = [
 				# folder file match
 				{
@@ -79,7 +81,7 @@ suite "ForEach-cli", ()->
 					ext: '.css',
 					base: 'foldr.css',
 					reldir: '',
-					dir: "#{process.cwd()}/test/samples/sass/css" # because a folder
+					dir: "#{normalizedCwd}/test/samples/sass/css" # because a folder
 				},
 				# ✨ Nested folder, and reldir
 				{
@@ -88,7 +90,7 @@ suite "ForEach-cli", ()->
 					ext: '.css',
 					base: 'sub.css',
 					reldir: 'foldr.css',
-					dir: "#{process.cwd()}/test/samples/sass/css/foldr.css"
+					dir: "#{normalizedCwd}/test/samples/sass/css/foldr.css"
 				},
 				{
 					path: 'test/samples/sass/css/main.copy.css',
@@ -96,7 +98,7 @@ suite "ForEach-cli", ()->
 					ext: '.css',
 					base: 'main.copy.css',
 					reldir: '',
-					dir: "#{process.cwd()}/test/samples/sass/css"
+					dir: "#{normalizedCwd}/test/samples/sass/css"
 				},
 				{
 					path: 'test/samples/sass/css/main.css',
@@ -104,7 +106,7 @@ suite "ForEach-cli", ()->
 					ext: '.css',
 					base: 'main.css',
 					reldir: '',
-					dir: "#{process.cwd()}/test/samples/sass/css"
+					dir: "#{normalizedCwd}/test/samples/sass/css"
 				}
 			]
 
@@ -116,7 +118,7 @@ suite "ForEach-cli", ()->
 				expect(m.reldir).to.equal expected.reldir
 				expect(m.path).to.equal expected.path
 				expect(m.dir).to.equal expected.dir
-				
+
 	test "Placeholders can be denoted either with dual curly braces or a hash + single curly brace wrap", ()->
 		execa(bin, ['-g', 'test/samples/sass/css/**/*', '-x', 'echo "#{name} #{ext} #{base} #{reldir} #{path} #{dir}" >> test/temp/four']).then (err)->
 			result = fs.readFileSync 'test/temp/four', {encoding:'utf8'}
@@ -132,8 +134,10 @@ suite "ForEach-cli", ()->
 				' test/samples/sass/css/main.copy.css ',
 				' test/samples/sass/css/main.css '
 			].forEach (path) -> expect(result.includes(path)).to.be.truthy
-			
-			# We are using mapping to make tests pure, as Listr run doesn't gurantee the order of execution
+
+			# Normalized path for cross-platform compatibility
+			normalizedCwd = process.cwd().replace(/\\/g, '/')
+			# We are using mapping to make tests pure, as Listr run doesn't guarantee the order of execution
 			expectedResults = [
 				# folder file match
 				{
@@ -142,7 +146,7 @@ suite "ForEach-cli", ()->
 					ext: '.css',
 					base: 'foldr.css',
 					reldir: '',
-					dir: "#{process.cwd()}/test/samples/sass/css" # because a folder
+					dir: "#{normalizedCwd}/test/samples/sass/css" # because a folder
 				},
 				# ✨ Nested folder, and reldir
 				{
@@ -151,7 +155,7 @@ suite "ForEach-cli", ()->
 					ext: '.css',
 					base: 'sub.css',
 					reldir: 'foldr.css',
-					dir: "#{process.cwd()}/test/samples/sass/css/foldr.css"
+					dir: "#{normalizedCwd}/test/samples/sass/css/foldr.css"
 				},
 				{
 					path: 'test/samples/sass/css/main.copy.css',
@@ -159,7 +163,7 @@ suite "ForEach-cli", ()->
 					ext: '.css',
 					base: 'main.copy.css',
 					reldir: '',
-					dir: "#{process.cwd()}/test/samples/sass/css"
+					dir: "#{normalizedCwd}/test/samples/sass/css"
 				},
 				{
 					path: 'test/samples/sass/css/main.css',
@@ -167,7 +171,7 @@ suite "ForEach-cli", ()->
 					ext: '.css',
 					base: 'main.css',
 					reldir: '',
-					dir: "#{process.cwd()}/test/samples/sass/css"
+					dir: "#{normalizedCwd}/test/samples/sass/css"
 				}
 			]
 
@@ -205,7 +209,7 @@ suite "ForEach-cli", ()->
 		execa(bin, ['-g', 'test/samples/sass/css/**/*.css', '--nodir', 'true', '-x', 'echo {{base}} >> test/temp/seven']).then (err)->
 			result = fs.readFileSync 'test/temp/seven', {encoding:'utf8'}
 			resultLines = result.split('\n').filter (validLine)-> validLine
-			
+
 			expect(resultLines.length).to.equal 3
 			expect(resultLines.find (line) -> line == 'sub.css').to.be.truthy
 			expect(resultLines.find (line) -> line == 'main.copy.css').to.be.truthy
