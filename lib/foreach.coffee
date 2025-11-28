@@ -15,7 +15,7 @@ module.exports = (options)-> new Promise (finish)->
 
 	glob options.glob, globOptions, (err, files)-> if err then return console.error(err) else
 		tasks = new Listr files.map((file)=>
-			title: "Executing command: #{chalk.dim(file)}"		
+			title: "Executing command: #{chalk.dim(file)}"
 			task: ()=> executeCommand(file)
 		), options # same as {concurrent:options.concurrent}
 
@@ -31,7 +31,7 @@ module.exports = (options)-> new Promise (finish)->
 			when placeholder is 'path' then filePath
 			when pathParams[placeholder]? then pathParams[placeholder]
 			else entire
-		
+
 		if options.forceColor and process.platform isnt 'win32'
 			command = "FORCE_COLOR=true #{command}"
 
@@ -59,13 +59,24 @@ module.exports = (options)-> new Promise (finish)->
 
 	## ==========================================================================
 	## Helpers
-	## ========================================================================== 
+	## ==========================================================================
 	getDirName = (pathParams, filePath)->
 		dirInGlob = options.glob.match(/^[^\*]*/)[0] || ''
-		filePath
-			.replace pathParams.base, ''
-			.replace process.cwd()+"/#{dirInGlob}", ''
-			.slice(0, -1)
+		# Use pathParams.dir instead of filePath to get directory path without filename
+		# Normalize paths to forward slashes for consistent replacement
+		normalizedDirPath = pathParams.dir.replace(/\\/g, '/')
+		# Remove trailing slash from dirInGlob before joining to avoid double slashes
+		trimmedDirInGlob = dirInGlob.replace(/\/$/, '')
+		relativeGlobPath = path.join(process.cwd(), trimmedDirInGlob).replace(/\\/g, '/')
+
+		# Remove the glob prefix to get relative directory
+		relativeDir = normalizedDirPath
+			.replace(relativeGlobPath, '')
+			.replace(/^\//, '')  # Remove leading slash if any
+
+		# Handle case where pathParams.dir equals the glob path (file in root)
+		if relativeDir == '.' then relativeDir = ''
+		relativeDir
 
 	isValidOutput = (output)->
 		output and
@@ -91,7 +102,7 @@ module.exports = (options)-> new Promise (finish)->
 		for file,message of finalLogs.log
 			console.log chalk.bgWhite.black.bold("Output")+' '+chalk.dim(file)
 			console.log formatOutputMessage(message)
-		
+
 		for file,message of finalLogs.error
 			console.log chalk.bgRed.white.bold("Error")+' '+chalk.dim(file)
 			console.log formatOutputMessage(message)
