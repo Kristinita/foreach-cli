@@ -1,6 +1,6 @@
 fs = require('fs')
 path = require('path')
-glob = require('glob')
+{glob} = require('glob')
 chalk = require('chalk')
 Listr = require '@danielkalen/listr'
 exec = require('child_process').exec
@@ -13,17 +13,23 @@ module.exports = (options)-> new Promise (finish, fail)->
 	if options.ignore then globOptions.ignore = options.ignore
 	if options.nodir then globOptions.nodir = options.nodir
 
-	glob options.glob, globOptions, (err, files)-> if err then return console.error(err) else
-		tasks = new Listr files.map((file)=>
-			title: "Executing command: #{chalk.dim(file)}"
-			task: ()=> executeCommand(file)
-		), options # same as {concurrent:options.concurrent}
+	glob(options.glob, globOptions)
+		.then (files) ->
+			tasks = new Listr files.map((file)=>
+				title: "Executing command: #{chalk.dim(file)}"
+				task: ()=> executeCommand(file)
+			), options # same as {concurrent:options.concurrent}
 
-		tasks.run().then(outputFinalLogs, outputFinalLogs)
+			tasks.run().then(outputFinalLogs, outputFinalLogs)
+		.catch (err) ->
+			console.error(err)
+			fail(err)
 
 
 
 	executeCommand = (filePath)-> new Promise (resolve, reject)->
+		# Normalize filePath to use forward slashes for consistency across platforms
+		normalizedFilePath = filePath.replace(/\\/g, '/')
 		pathParams = path.parse path.resolve(filePath)
 		# Normalize path components to use forward slashes for consistency across platforms
 		pathParams.dir = pathParams.dir.replace(/\\/g, '/') if pathParams.dir
@@ -31,7 +37,7 @@ module.exports = (options)-> new Promise (finish, fail)->
 		pathParams.reldir = getDirName(pathParams, path.resolve(filePath))
 
 		command = options.command.replace regEx.placeholder, (entire, placeholder)-> switch
-			when placeholder is 'path' then filePath
+			when placeholder is 'path' then normalizedFilePath
 			when pathParams[placeholder]? then pathParams[placeholder]
 			else entire
 
@@ -42,12 +48,12 @@ module.exports = (options)-> new Promise (finish, fail)->
 			# Remove surrounding quotes from output for Windows compatibility
 			if isValidOutput(stdout)
 				cleanedStdout = stdout?.replace(/^"|"$/g, '')
-				finalLogs.log[filePath] = cleanedStdout
+				finalLogs.log[normalizedFilePath] = cleanedStdout
 
 			if isValidOutput(stderr) and not isValidOutput(err)
-				finalLogs.log[filePath] = stderr
+				finalLogs.log[normalizedFilePath] = stderr
 			else if isValidOutput(err)
-				finalLogs.error[filePath] = stderr or err
+				finalLogs.error[normalizedFilePath] = stderr or err
 
 			if isValidOutput(err) then reject() else resolve()
 
