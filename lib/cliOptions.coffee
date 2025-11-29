@@ -1,5 +1,5 @@
 module.exports =
-	'g': 
+	'g':
 		alias: 'glob'
 		describe: 'Specify the glob '
 		type: 'string'
@@ -7,6 +7,9 @@ module.exports =
 		alias: 'ignore'
 		describe: 'Glob ignore'
 		type: 'string'
+	'gitignore':
+		describe: 'Ignore files and folders specified in .gitignore'
+		type: 'boolean'
 	'nd':
 		alias: 'nodir'
 		describe: 'Ignore directories (folders)'
@@ -15,17 +18,17 @@ module.exports =
 		alias: 'execute'
 		describe: 'Command to execute upon file addition/change'
 		type: 'string'
-	'c': 
+	'c':
 		alias: 'forceColor'
 		describe: 'Force color TTY output (pass --no-c to disable)'
 		type: 'boolean'
 		default: true
-	't': 
+	't':
 		alias: 'trim'
 		describe: 'Trims the output of the command executions to only show the first X characters of the output'
 		type: 'number'
 		default: undefined
-	'C': 
+	'C':
 		alias: 'concurrent'
 		describe: 'Execute commands concurrently (pass --no-C to disable)'
 		type: 'boolean'

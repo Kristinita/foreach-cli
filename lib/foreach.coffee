@@ -1,6 +1,7 @@
 fs = require('fs')
 path = require('path')
 {glob} = require('glob')
+walk = require('ignore-walk')
 chalk = require('chalk')
 Listr = require '@danielkalen/listr'
 exec = require('child_process').exec
@@ -9,21 +10,56 @@ regEx = require './regex'
 
 module.exports = (options)-> new Promise (finish, fail)->
 	finalLogs = 'log':{}, 'error':{}
-	globOptions = {}
-	if options.ignore then globOptions.ignore = options.ignore
-	if options.nodir then globOptions.nodir = options.nodir
 
-	glob(options.glob, globOptions)
-		.then (files) ->
-			tasks = new Listr files.map((file)=>
-				title: "Executing command: #{chalk.dim(file)}"
-				task: ()=> executeCommand(file)
-			), options # same as {concurrent:options.concurrent}
+	# Helper function to create glob options from current options
+	createGlobOptions = () ->
+		globOptions = {}
+		if options.ignore then globOptions.ignore = options.ignore
+		if options.nodir then globOptions.nodir = options.nodir
+		globOptions
 
-			tasks.run().then(outputFinalLogs, outputFinalLogs)
-		.catch (err) ->
-			console.error(err)
-			fail(err)
+	# Helper function for consistent error handling
+	handleError = (err) ->
+		console.error(err)
+		fail(err)
+
+	if options.gitignore
+		# Get all the files that match the glob first
+		globOptions = createGlobOptions()
+
+		glob(options.glob, globOptions)
+			.then (globFiles) ->
+				# Use ignore-walk to determine which files should be filtered out
+				walkOptions =
+					path: process.cwd()
+					ignoreFiles: ['.gitignore']
+
+				try
+					# Get all non-ignored files in the project and create a Set for fast lookup with normalized paths
+					nonIgnoredFiles = new Set(walk.sync(walkOptions).map (file) -> file.replace(/\\/g, '/'))
+					# Filter glob results to only include files that are NOT ignored
+					filteredFiles = globFiles.filter (file) -> nonIgnoredFiles.has(file.replace(/\\/g, '/'))
+					createTasksAndExecute(filteredFiles)
+				catch err
+					handleError(err)
+			.catch (err) ->
+				handleError(err)
+	else
+		globOptions = createGlobOptions()
+
+		glob(options.glob, globOptions)
+			.then (files) ->
+				createTasksAndExecute(files)
+			.catch (err) ->
+				handleError(err)
+
+	createTasksAndExecute = (files) ->
+		tasks = new Listr files.map((file)=>
+			title: "Executing command: #{chalk.dim(file)}"
+			task: ()=> executeCommand(file)
+		), options # same as {concurrent:options.concurrent}
+
+		tasks.run().then(outputFinalLogs, outputFinalLogs)
 
 
 

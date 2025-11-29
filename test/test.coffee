@@ -214,3 +214,14 @@ suite "ForEach-cli", ()->
 			expect(resultLines.find (line) -> line == 'sub.css').to.be.truthy
 			expect(resultLines.find (line) -> line == 'main.copy.css').to.be.truthy
 			expect(resultLines.find (line) -> line == 'main.css').to.be.truthy
+
+
+	test "Will execute a given command on matched files that are not in .gitignore when --gitignore flag is used", ()->
+		execa(bin, ['-g', 'test/samples/sass/css/*', '--gitignore', 'true', '-x', 'echo {{base}} >> test/temp/eight']).then (err)->
+			result = fs.readFileSync 'test/temp/eight', {encoding:'utf8'}
+			resultLines = result.split('\n').filter (validLine) -> validLine
+
+			# Should solely contain “main.css” since “main.copy.css” and “foldr.css” are in “.gitignore”
+			expect(resultLines.length).to.equal 1
+			# Remove any trailing whitespace/line endings that may vary by OS
+			expect(resultLines[0].trim()).to.equal 'main.css'
