@@ -54,12 +54,46 @@ module.exports = (options)-> new Promise (finish, fail)->
 				handleError(err)
 
 	createTasksAndExecute = (files) ->
-		tasks = new Listr files.map((file)=>
-			title: "Executing command: #{chalk.dim(file)}"
-			task: ()=> executeCommand(file)
-		), options # same as {concurrent:options.concurrent}
+		if options.spin is false
+			# If --no-spin is used, output execution messages but run commands in parallel if concurrent is true
+			# Show initial execution messages first
+			for file in files
+				console.log "Executing command for the file: #{chalk.dim(file)}"
 
-		tasks.run().then(outputFinalLogs, outputFinalLogs)
+			# Helper function to handle command result
+			handleCommandResult = (file) ->
+				executeCommand(file)
+					.then(() -> console.log "√ The command was successfully executed: #{chalk.dim(file)}")
+					.catch((error) ->
+						console.log "× The command was executed with error(s): #{chalk.dim(file)}"
+						# Continue execution despite errors
+						Promise.resolve()
+					)
+
+			# Execute commands based on concurrent option
+			if options.concurrent is false
+				# Run commands sequentially
+				sequencePromise = Promise.resolve()
+				for file in files
+					do (file) ->  # Create closure to capture the current file value
+						sequencePromise = sequencePromise.then(() -> handleCommandResult(file))
+				sequencePromise.then(outputFinalLogs, outputFinalLogs)
+			else
+				# Run commands in parallel using Promise.all (default behavior)
+				Promise.all(files.map(handleCommandResult)).then(outputFinalLogs, outputFinalLogs)
+		else
+			# Use Listr for normal operation with spinners
+			listrOptions = {}
+			if options.concurrent != undefined
+				listrOptions.concurrent = options.concurrent
+
+			tasks = new Listr files.map((file)=>
+				title: "Executing command for the file: #{chalk.dim(file)}"
+				task: ()=> executeCommand(file)
+			), listrOptions
+
+			tasks.run().then(outputFinalLogs, outputFinalLogs)
+
 
 
 

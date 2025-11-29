@@ -216,8 +216,8 @@ suite "ForEach-cli", ()->
 			expect(resultLines.find (line) -> line == 'main.css').to.be.truthy
 
 
-	test "Will execute a given command on matched files that are not in .gitignore when --gitignore flag is used", ()->
-		execa(bin, ['-g', 'test/samples/sass/css/*', '--gitignore', 'true', '-x', 'echo {{base}} >> test/temp/eight']).then (err)->
+	test "Will execute a given command on matched files that are not in .gitignore when --gitignore flag is used", () ->
+		execa(bin, ['-g', 'test/samples/sass/css/*', '--gitignore', 'true', '-x', 'echo {{base}} >> test/temp/eight']).then (err) ->
 			result = fs.readFileSync 'test/temp/eight', {encoding:'utf8'}
 			resultLines = result.split('\n').filter (validLine) -> validLine
 
@@ -225,3 +225,64 @@ suite "ForEach-cli", ()->
 			expect(resultLines.length).to.equal 1
 			# Remove any trailing whitespace/line endings that may vary by OS
 			expect(resultLines[0].trim()).to.equal 'main.css'
+
+
+	# Helper function to run foreach with a slow command and check for spinner characters
+	runSpinnerTest = (useNoSpin, testName) ->
+		# Create a slow command to allow spinner animation to appear in output
+		filename = 'test/temp/slow_test_' + testName + '.js'
+		fs.writeFileSync filename, '''
+		setTimeout(() => {
+		  console.log('Slow command completed');
+		}, 2000);
+		''', {encoding: 'utf8'}
+
+		# Prepare command arguments
+		args = [bin, '-g', 'test/samples/sass/css/*.css', '-x', "node #{filename}"]
+		if useNoSpin
+			args.push('--no-spin')
+
+		# Run foreach with the slow command and capture all output
+		execa('node', args).then (result) ->
+			# Clean up temporary file
+			fs.removeSync(filename)
+
+			# Save the output to a file for checking spinner characters
+			output = result.stdout + result.stderr
+			outputFile = 'test/temp/spinner_output_' + testName + '.txt'
+			fs.writeFileSync(outputFile, output, {encoding:'utf8'})
+
+			# Check if the output file contains any spinner characters at the beginning of lines
+			outputFromFile = fs.readFileSync(outputFile, {encoding:'utf8'})
+			lines = outputFromFile.split('\n')
+
+			spinnerChars = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏', '-', '\\', '|', '/']
+
+			hasSpinnerChars = false
+			for line in lines when line
+				for char in spinnerChars
+					if line.trim().startsWith(char)
+						hasSpinnerChars = true
+						break
+				break if hasSpinnerChars
+
+			# Verify the command completed successfully
+			expect(outputFromFile).to.contain("Slow command completed")
+
+			return
+				outputFromFile: outputFromFile
+				hasSpinnerChars: hasSpinnerChars
+
+
+	test "Will execute command with --no-spin flag without showing spinners", () ->
+		runSpinnerTest(true, "no_spin").then (result) ->
+			# Check that no spinner characters appear when the argument “--no-spin” is used
+			if result.hasSpinnerChars
+				throw new Error("Spinner characters found when --no-spin was used: #{result.outputFromFile}")
+
+
+	test "Will find spinner characters when not using --no-spin flag", () ->
+		runSpinnerTest(false, "with_spin").then (result) ->
+			# The test verifies that spinner characters appear without the argument “--no-spin”
+			if not result.hasSpinnerChars
+				throw new Error("Spinner characters should appear when --no-spin is not used, but were not found in output")

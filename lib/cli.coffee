@@ -17,10 +17,12 @@ suppliedOptions =
 	'trim': args.t or args.trim
 	'forceColor': args.c or args.forceColor
 	'concurrent': args.C or args.concurrent
+	'spin': if args.spin != undefined then args.spin else true
 
 if requiresHelp or not suppliedOptions.glob or not suppliedOptions.command
-	process.stdout.write(yargs.help());
-	process.exit(0)
+	yargs.getHelp().then (helpText) ->
+		console.log(helpText)
+		process.exit(0)
 
 
 

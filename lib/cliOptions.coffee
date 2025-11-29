@@ -33,3 +33,7 @@ module.exports =
 		describe: 'Execute commands concurrently (pass --no-C to disable)'
 		type: 'boolean'
 		default: true
+	'spin':
+		describe: 'Show spinners when executing commands (pass --no-spin to disable)'
+		type: 'boolean'
+		default: true
