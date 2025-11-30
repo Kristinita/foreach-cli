@@ -8,11 +8,12 @@ yargs
 	.version(require('../package.json').version)
 args = yargs.argv
 requiresHelp = args.h or args.help
+
 suppliedOptions =
 	'glob': args.g or args.glob or args._[0]
 	'command': args.x or args.execute or args._[1]
 	'ignore': args.i or args.ignore
-	'gitignore': args.gitignore
+	'ignore-from-file': args.f or args['ignore-from-file']
 	'nodir': args.nd or args.nodir
 	'trim': args.t or args.trim
 	'forceColor': args.c or args.forceColor

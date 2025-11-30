@@ -23,7 +23,7 @@ module.exports = (options)-> new Promise (finish, fail)->
 		console.error(err)
 		fail(err)
 
-	if options.gitignore
+	if options['ignore-from-file']
 		# Get all the files that match the glob first
 		globOptions = createGlobOptions()
 
@@ -32,7 +32,7 @@ module.exports = (options)-> new Promise (finish, fail)->
 				# Use ignore-walk to determine which files should be filtered out
 				walkOptions =
 					path: process.cwd()
-					ignoreFiles: ['.gitignore']
+					ignoreFiles: [options['ignore-from-file']]
 
 				try
 					# Get all non-ignored files in the project and create a Set for fast lookup with normalized paths

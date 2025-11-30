@@ -216,15 +216,54 @@ suite "ForEach-cli", ()->
 			expect(resultLines.find (line) -> line == 'main.css').to.be.truthy
 
 
-	test "Will execute a given command on matched files that are not in .gitignore when --gitignore flag is used", () ->
-		execa(bin, ['-g', 'test/samples/sass/css/*', '--gitignore', 'true', '-x', 'echo {{base}} >> test/temp/eight']).then (err) ->
+	test "Will execute a given command on matched files that aren’t in the .gitignore when --ignore-from-file=.gitignore is used", () ->
+		execa(bin, ['-g', 'test/samples/sass/css/**/*.css', '--ignore-from-file', '.gitignore', '-x', 'echo {{base}} >> test/temp/eight']).then (err) ->
 			result = fs.readFileSync 'test/temp/eight', {encoding:'utf8'}
 			resultLines = result.split('\n').filter (validLine) -> validLine
 
-			# Should solely contain “main.css” since “main.copy.css” and “foldr.css” are in “.gitignore”
+			###
+			Should solely contain “main.css” since “main.copy.css” is ignored by pattern and “foldr.css” directory is ignored,
+			which also causes its contents (“sub.css”) to be ignored
+
+			[INFO] ignore-walk solely returns files, not directories
+			###
 			expect(resultLines.length).to.equal 1
 			# Remove any trailing whitespace/line endings that may vary by OS
 			expect(resultLines[0].trim()).to.equal 'main.css'
+
+	test "Will execute a given command on matched files that aren’t in custom ignore file when --ignore-from-file is provided", () ->
+		execa(bin, ['-g', 'test/samples/sass/css/**/*.css', '--ignore-from-file', '.customignore', '-x', 'echo {{base}} >> test/temp/nine']).then (err) ->
+			result = fs.readFileSync 'test/temp/nine', {encoding:'utf8'}
+			resultLines = result.split('\n').filter (validLine) -> validLine
+
+			###
+			Should contain “main.css”, “foldr.css” (directory), and “sub.css”
+			since solely “main.copy.css” is in “.customignore”
+
+			[INFO] ignore-walk solely returns files, not directories,
+			therefore “foldr.css” not included despite being a directory.
+			We expect “main.css” (file) and “sub.css” (file from “foldr.css/sub.css”), “main.copy.css” is ignored
+			###
+			expect(resultLines.length).to.equal 2
+			expect(resultLines.find (line) -> line.trim() == 'main.css').to.be.truthy
+			expect(resultLines.find (line) -> line.trim() == 'sub.css').to.be.truthy
+
+	test "Will execute command on all files when --ignore-from-file flag is not used (no ignore behavior)", () ->
+		execa(bin, ['-g', 'test/samples/sass/css/**/*.css', '-x', 'echo {{base}} >> test/temp/ten']).then (err) ->
+			result = fs.readFileSync 'test/temp/ten', {encoding:'utf8'}
+			resultLines = result.split('\n').filter (validLine) -> validLine
+
+			###
+			Should contain “.css” files and folders: “main.css” (file), “main.copy.css” (file),
+			“foldr.css” (folder), “sub.css” (from “foldr.css/sub.css”)
+
+			[INFO] glob template includes directories whose names end with “.css”
+			###
+			expect(resultLines.length).to.equal 4
+			expect(resultLines.find (line) -> line.trim() == 'main.css').to.be.truthy
+			expect(resultLines.find (line) -> line.trim() == 'main.copy.css').to.be.truthy
+			expect(resultLines.find (line) -> line.trim() == 'foldr.css').to.be.truthy
+			expect(resultLines.find (line) -> line.trim() == 'sub.css').to.be.truthy
 
 
 	# Helper function to run foreach with a slow command and check for spinner characters
@@ -256,6 +295,7 @@ suite "ForEach-cli", ()->
 			outputFromFile = fs.readFileSync(outputFile, {encoding:'utf8'})
 			lines = outputFromFile.split('\n')
 
+			# Different spinner chars for UNIX and Windows
 			spinnerChars = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏', '-', '\\', '|', '/']
 
 			hasSpinnerChars = false
