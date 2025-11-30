@@ -7,10 +7,15 @@ build: false
 
 clone_depth: 1
 
+environment:
+  matrix:
+  - nodejs_version: "23"
+  - nodejs_version: "25"
+
 image: Visual Studio 2022
 
 install:
-- choco install nodejs --yes
+- ps: Install-Product node $env:nodejs_version
 - npm install
 
 platform: x64

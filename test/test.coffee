@@ -64,15 +64,15 @@ suite "ForEach-cli", () ->
 
 						# Check the paths
 						[
-							' test/samples/sass/css/foldr.css ',
-							' test/samples/sass/css/foldr.css/sub.css ',
-							' test/samples/sass/css/main.copy.css ',
-							' test/samples/sass/css/main.css '
+							'test/samples/sass/css/foldr.css',
+							'test/samples/sass/css/foldr.css/sub.css',
+							'test/samples/sass/css/main.copy.css',
+							'test/samples/sass/css/main.css'
 						].forEach (path) -> expect(result.includes(path)).to.be.truthy
 
 
 						# Normalized path for cross-platform compatibility
-						normalizedCwd = process.cwd().replace(/\\/g, '/')
+						normalizedCwd = process.cwd().split(PATH.win32.sep).join(PATH.posix.sep)
 						# We are using mapping to make tests pure, as Listr run doesn't guarantee the order of execution
 						expectedResults = [
 							# folder file match
@@ -131,14 +131,14 @@ suite "ForEach-cli", () ->
 
 						# Check the paths
 						[
-							' test/samples/sass/css/foldr.css ',
-							' test/samples/sass/css/foldr.css/sub.css ',
-							' test/samples/sass/css/main.copy.css ',
-							' test/samples/sass/css/main.css '
+							'test/samples/sass/css/foldr.css',
+							'test/samples/sass/css/foldr.css/sub.css',
+							'test/samples/sass/css/main.copy.css',
+							'test/samples/sass/css/main.css'
 						].forEach (path) -> expect(result.includes(path)).to.be.truthy
 
 						# Normalized path for cross-platform compatibility
-						normalizedCwd = process.cwd().replace(/\\/g, '/')
+						normalizedCwd = process.cwd().split(PATH.win32.sep).join(PATH.posix.sep)
 						# We are using mapping to make tests pure, as Listr run doesn't guarantee the order of execution
 						expectedResults = [
 							# folder file match

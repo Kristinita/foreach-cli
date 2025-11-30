@@ -36,9 +36,9 @@ module.exports = (options) -> new Promise (finish, fail) ->
 
 				try
 					# Get all non-ignored files in the project and create a Set for fast lookup with normalized paths
-					nonIgnoredFiles = new Set(walk.sync(walkOptions).map (file) -> file.replace(/\\/g, '/'))
+					nonIgnoredFiles = new Set(walk.sync(walkOptions).map (file) -> file.split(path.win32.sep).join(path.posix.sep))
 					# Filter glob results to only include files that are NOT ignored
-					filteredFiles = globFiles.filter (file) -> nonIgnoredFiles.has(file.replace(/\\/g, '/'))
+					filteredFiles = globFiles.filter (file) -> nonIgnoredFiles.has(file.split(path.win32.sep).join(path.posix.sep))
 					createTasksAndExecute(filteredFiles)
 				catch err
 					handleError(err)
@@ -99,16 +99,17 @@ module.exports = (options) -> new Promise (finish, fail) ->
 
 	executeCommand = (filePath)-> new Promise (resolve, reject) ->
 		# Normalize filePath to use forward slashes for consistency across platforms
-		normalizedFilePath = filePath.replace(/\\/g, '/')
+		normalizedFilePath = filePath.split(path.win32.sep).join(path.posix.sep)
 		pathParams = path.parse path.resolve(filePath)
 		# Normalize path components to use forward slashes for consistency across platforms
-		pathParams.dir = pathParams.dir.replace(/\\/g, '/') if pathParams.dir
-		pathParams.root = pathParams.root.replace(/\\/g, '/') if pathParams.root
+		pathParams.dir = pathParams.dir.split(path.win32.sep).join(path.posix.sep) if pathParams.dir
+		pathParams.root = pathParams.root.split(path.win32.sep).join(path.posix.sep) if pathParams.root
 		pathParams.reldir = getDirName(pathParams, path.resolve(filePath))
 
 		command = options.command.replace regEx.placeholder, (entire, placeholder) -> switch
 			when placeholder is 'path' then normalizedFilePath
-			when pathParams[placeholder]? then pathParams[placeholder]
+			when placeholder of pathParams and pathParams[placeholder] != undefined and pathParams[placeholder] != null
+				pathParams[placeholder]
 			else entire
 
 		if options.forceColor and process.platform isnt 'win32'
@@ -146,10 +147,10 @@ module.exports = (options) -> new Promise (finish, fail) ->
 		dirInGlob = options.glob.match(/^[^\*]*/)[0] || ''
 		# Use pathParams.dir instead of filePath to get directory path without filename
 		# Normalize paths to forward slashes for consistent replacement
-		normalizedDirPath = pathParams.dir.replace(/\\/g, '/')
+		normalizedDirPath = pathParams.dir.split(path.win32.sep).join(path.posix.sep)
 		# Remove trailing slash from dirInGlob before joining to avoid double slashes
 		trimmedDirInGlob = dirInGlob.replace(/\/$/, '')
-		relativeGlobPath = path.join(process.cwd(), trimmedDirInGlob).replace(/\\/g, '/')
+		relativeGlobPath = path.join(process.cwd(), trimmedDirInGlob).split(path.win32.sep).join(path.posix.sep)
 
 		# Remove the glob prefix to get relative directory
 		relativeDir = normalizedDirPath
