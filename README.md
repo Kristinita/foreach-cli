@@ -13,7 +13,7 @@ Usage:
 ------
 **Command Line**
 ```
-foreach -g <glob> -x <command to execute>
+foreach --glob <glob> --execute <command to execute>
 ```
 
 **Command Line Options:**
@@ -49,7 +49,7 @@ Example:
 ------
 #### Command Line:
 ```
-foreach -g "**/*.tar" -x "tar xvf #{path}"
-foreach -g "*/*.jpg" -x "convert #{path}.jpg #{dir}/#{name}.converted.png"
+foreach --glob "**/*.tar" --execute "tar xvf #{path}"
+foreach --glob "*/*.jpg" --execute "convert #{path}.jpg #{dir}/#{name}.converted.png"
 ```
 

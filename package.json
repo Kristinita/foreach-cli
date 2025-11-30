@@ -24,11 +24,11 @@
     "url": "https://github.com/danielkalen/foreach-cli"
   },
   "license": "MIT",
-  "mocha_opts": "-u tdd -b --compilers coffee:coffee-register --slow 500 --timeout 4000 -R spec",
   "scripts": {
-    "coverage": "istanbul cover --dir test/coverage/node node_modules/mocha/bin/_mocha -- $npm_package_mocha_opts && npm run coverage:badge",
+    "coverage": "istanbul cover --dir test/coverage/node node_modules/mocha/bin/_mocha -- --ui tdd --bail --compilers coffee:coffee-register --slow 500 --timeout 4000 --reporter spec && npm run coverage:badge",
     "coverage:badge": "coffee .config/badge-gen.coffee",
-    "test": "mocha $npm_package_mocha_opts"
+    "lint": "node bin --execute \"npx coffeelint {{path}}\" --glob \"**/*.coffee\" --ignore-from-file=.gitignore --no-spin",
+    "test": "npx mocha --ui tdd --bail --compilers coffee:coffee-register --slow 500 --timeout 4000 --reporter spec"
   },
   "dependencies": {
     "@danielkalen/listr": "^0.5.0",
@@ -40,6 +40,7 @@
     "yargs": "^17.7.2"
   },
   "devDependencies": {
+    "@coffeelint/cli": "^5.2.11",
     "chai": "^3.5.0",
     "chai-spies": "^0.7.1",
     "create-output-stream": "0.0.1",

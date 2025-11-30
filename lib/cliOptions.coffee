@@ -21,7 +21,7 @@ module.exports =
 		type: 'string'
 	'c':
 		alias: 'forceColor'
-		describe: 'Force color TTY output (pass --no-c to disable)'
+		describe: 'Force color TTY output (pass --no-forceColor to disable)'
 		type: 'boolean'
 		default: true
 	't':
@@ -31,7 +31,7 @@ module.exports =
 		default: undefined
 	'C':
 		alias: 'concurrent'
-		describe: 'Execute commands concurrently (pass --no-C to disable)'
+		describe: 'Execute commands concurrently (pass --no-concurrent to disable)'
 		type: 'boolean'
 		default: true
 	'spin':

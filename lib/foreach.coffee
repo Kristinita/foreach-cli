@@ -8,7 +8,7 @@ exec = require('child_process').exec
 regEx = require './regex'
 
 
-module.exports = (options)-> new Promise (finish, fail)->
+module.exports = (options) -> new Promise (finish, fail) ->
 	finalLogs = 'log':{}, 'error':{}
 
 	# Helper function to create glob options from current options
@@ -55,7 +55,7 @@ module.exports = (options)-> new Promise (finish, fail)->
 
 	createTasksAndExecute = (files) ->
 		if options.spin is false
-			# If --no-spin is used, output execution messages but run commands in parallel if concurrent is true
+			# If the option “--no-spin” is used, output execution messages but run commands in parallel if concurrent is true
 			# Show initial execution messages first
 			for file in files
 				console.log "Executing command for the file: #{chalk.dim(file)}"
@@ -63,9 +63,9 @@ module.exports = (options)-> new Promise (finish, fail)->
 			# Helper function to handle command result
 			handleCommandResult = (file) ->
 				executeCommand(file)
-					.then(() -> console.log "√ The command was successfully executed: #{chalk.dim(file)}")
+					.then(() -> console.log "√ The command was successfully executed for the file: #{chalk.dim(file)}")
 					.catch((error) ->
-						console.log "× The command was executed with error(s): #{chalk.dim(file)}"
+						console.log "× The command was executed with error(s) for the file: #{chalk.dim(file)}"
 						# Continue execution despite errors
 						Promise.resolve()
 					)
@@ -79,7 +79,7 @@ module.exports = (options)-> new Promise (finish, fail)->
 						sequencePromise = sequencePromise.then(() -> handleCommandResult(file))
 				sequencePromise.then(outputFinalLogs, outputFinalLogs)
 			else
-				# Run commands in parallel using Promise.all (default behavior)
+				# Run commands in parallel using “Promise.all” (default behavior)
 				Promise.all(files.map(handleCommandResult)).then(outputFinalLogs, outputFinalLogs)
 		else
 			# Use Listr for normal operation with spinners
@@ -87,9 +87,9 @@ module.exports = (options)-> new Promise (finish, fail)->
 			if options.concurrent != undefined
 				listrOptions.concurrent = options.concurrent
 
-			tasks = new Listr files.map((file)=>
+			tasks = new Listr files.map((file) ->
 				title: "Executing command for the file: #{chalk.dim(file)}"
-				task: ()=> executeCommand(file)
+				task: () -> executeCommand(file)
 			), listrOptions
 
 			tasks.run().then(outputFinalLogs, outputFinalLogs)
@@ -97,7 +97,7 @@ module.exports = (options)-> new Promise (finish, fail)->
 
 
 
-	executeCommand = (filePath)-> new Promise (resolve, reject)->
+	executeCommand = (filePath)-> new Promise (resolve, reject) ->
 		# Normalize filePath to use forward slashes for consistency across platforms
 		normalizedFilePath = filePath.replace(/\\/g, '/')
 		pathParams = path.parse path.resolve(filePath)
@@ -106,7 +106,7 @@ module.exports = (options)-> new Promise (finish, fail)->
 		pathParams.root = pathParams.root.replace(/\\/g, '/') if pathParams.root
 		pathParams.reldir = getDirName(pathParams, path.resolve(filePath))
 
-		command = options.command.replace regEx.placeholder, (entire, placeholder)-> switch
+		command = options.command.replace regEx.placeholder, (entire, placeholder) -> switch
 			when placeholder is 'path' then normalizedFilePath
 			when pathParams[placeholder]? then pathParams[placeholder]
 			else entire
@@ -114,7 +114,7 @@ module.exports = (options)-> new Promise (finish, fail)->
 		if options.forceColor and process.platform isnt 'win32'
 			command = "FORCE_COLOR=true #{command}"
 
-		exec command, (err, stdout, stderr)->
+		exec command, (err, stdout, stderr) ->
 			# Remove surrounding quotes from output for Windows compatibility
 			if isValidOutput(stdout)
 				cleanedStdout = stdout?.replace(/^"|"$/g, '')
@@ -161,7 +161,7 @@ module.exports = (options)-> new Promise (finish, fail)->
 		if relativeDir == '.' then relativeDir = ''
 		relativeDir
 
-	isValidOutput = (output)->
+	isValidOutput = (output) ->
 		output and
 		output isnt 'null' and
 		(
@@ -169,20 +169,19 @@ module.exports = (options)-> new Promise (finish, fail)->
 			(typeof output is 'object')
 		)
 
-	formatOutputMessage = (message)->
+	formatOutputMessage = (message) ->
 		# Remove surrounding quotes from message for Windows compatibility
-		cleanedMessage = message?.replace(/^"|"$/g, '')
 		if options.trim
-			cleanedMessage.slice(0, options.trim)
+			message.slice(0, options.trim)
 		else
-			cleanedMessage
+			message
 
 
 
 
 
 
-	outputFinalLogs = ()-> if Object.keys(finalLogs.log).length or Object.keys(finalLogs.error).length
+	outputFinalLogs = () -> if Object.keys(finalLogs.log).length or Object.keys(finalLogs.error).length
 		process.stdout.write '\n\n'
 		for file,message of finalLogs.log
 			console.log chalk.bgWhite.black.bold("Output")+' '+chalk.dim(file)

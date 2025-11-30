@@ -1,16 +1,17 @@
 chalk = require 'chalk'
 
-labels = 
+labels =
 	'or': 				" #{chalk.bold.bgWhite.black 'OR'} "
 	'usage': 			chalk.bgYellow.black('Usage')
 	'placeholders': 	chalk.bgGreen.black('Placeholders')
 	'example': 			chalk.bgCyan.black('Examples')
 	'glob': 			chalk.italic.dim('<glob>')
 	'command': 			chalk.italic.dim('<command>')
-	'options': 			'-[c|t|C]'
+	'options': 			'--[forceColor|trim|concurrent]'
 
-values = 
-	'usage': "foreach-cli -g #{labels.glob} -x #{labels.command} #{labels.options} #{labels.or} #{labels.glob} #{labels.command} #{labels.options}"
+values =
+	'usage': "foreach-cli --glob #{labels.glob}
+				--execute #{labels.command} #{labels.options} #{labels.or} #{labels.glob} #{labels.command} #{labels.options}"
 	'placeholders': [
 		chalk.dim 'All placeholders can be denoted either with {{placeholder}} or #{placeholder}'
 		"path    -  full path and filename"
@@ -22,10 +23,10 @@ values =
 		"name    -  just file name"
 	].join '\n  '
 	'example': [
-		"foreach -g 'assets/*.scss' -x 'node-sass {{path}} -o dist/css/{{name}}.css'"
+		"foreach --glob 'assets/*.scss' --execute 'node-sass {{path}} --output dist/css/{{name}}.css'"
 		"forEach 'files/*' 'mv {{path}} newDir/{{base}}'"
-		"foreach-cli -g './**' -x 'stat -x \#{base} >> ./file-stats.log'"
-	].map((str)-> chalk.dim(str)).join '\n  '
+		"foreach-cli --glob './**' --execute 'stat -x \#{base} >> ./file-stats.log'"
+	].map((str) -> chalk.dim(str)).join '\n  '
 
 
 module.exports =
