@@ -1,0 +1,28 @@
+before_script:
+- grep '^VERSION' /etc/os-release
+- node --version
+- npm --version
+
+dist: noble
+
+git:
+  depth: 1
+
+install:
+- npm install
+
+language: node_js
+
+# [INFO] ignore-walk requires Node >=22.9.0 — https://github.com/npm/ignore-walk/blob/main/CHANGELOG.md#800-2025-07-24
+# glob — Node 20 — https://github.com/isaacs/node-glob/blob/main/changelog.md#110
+# yargs — Node 11 — https://github.com/yargs/yargs/blob/main/CHANGELOG.md#1700-2021-05-02
+# chalk — Node 10 — https://github.com/chalk/chalk/releases/tag/v4.0.0
+node_js:
+- 23
+- node
+
+os: linux
+
+script:
+- npm run lint
+- npm test

@@ -1,0 +1,20 @@
+before_test:
+- ver
+- node --version
+- npm --version
+
+build: false
+
+clone_depth: 1
+
+image: Visual Studio 2022
+
+install:
+- choco install nodejs --yes
+- npm install
+
+platform: x64
+
+test_script:
+- npm run lint
+- npm test
