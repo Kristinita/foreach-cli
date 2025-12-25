@@ -9,7 +9,7 @@ module.exports =
 		type: 'string'
 	'f':
 		alias: 'ignore-from-file'
-		describe: 'Ignore files and folders specified in the given ignore file (e.g., .gitignore, .customignore)'
+		describe: 'Ignore files and folders specified in the given ignore file (for example, .gitignore, .bzrignore)'
 		type: 'string'
 	'nd':
 		alias: 'nodir'
@@ -18,6 +18,15 @@ module.exports =
 	'x':
 		alias: 'execute'
 		describe: 'Command to execute upon file addition/change'
+		type: 'string'
+	'w':
+		alias: 'watch'
+		describe: 'Process solely new and modified files since the last execution
+					of foreach-cli with the same glob template and subcommand'
+		type: 'boolean'
+	'W':
+		alias: 'watch-file'
+		describe: 'Specify the path to the watch metadata file (default: .foreach-watch.json)'
 		type: 'string'
 	'c':
 		alias: 'forceColor'

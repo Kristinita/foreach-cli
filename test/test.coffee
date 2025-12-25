@@ -1,9 +1,8 @@
-PATH = require 'path'
+chai = require 'chai'
 execa = require 'execa'
 fs = require 'fs-extra'
-chai = require 'chai'
-expect = chai.expect
-should = chai.should()
+PATH = require 'node:path'
+{ expect } = chai
 bin = PATH.resolve 'bin'
 
 parsePlaceholdersResult = (result) ->
@@ -24,13 +23,13 @@ parsePlaceholdersResult = (result) ->
 	return parsedResults
 
 
-suite "ForEach-cli", () ->
+suite "ForEach-cli", ->
 	suiteSetup (done) -> fs.ensureDir 'test/temp', done
 	suiteTeardown (done) -> fs.remove 'test/temp', done
 
-	test "Will execute a given command on all matched files/dirs in a given glob when using explicit arguments", () ->
+	test "Will execute a given command on all matched files/dirs in a given glob when using explicit arguments", ->
 		execa(bin, ['--glob', 'test/samples/sass/css/*', '--execute', 'echo {{base}} >> test/temp/one']).then (err) ->
-			result = fs.readFileSync 'test/temp/one', {encoding:'utf8'}
+			result = fs.readFileSync 'test/temp/one', encoding: 'utf8'
 			resultLines = result.split('\n').filter (validLine) -> validLine
 
 			# Because there is 3, and all of them are within the list of 3. Then each of them makes a line
@@ -40,9 +39,9 @@ suite "ForEach-cli", () ->
 			expect(resultLines.find (line) -> line == 'main.css').to.be.truthy
 
 
-	test "Will execute a given command on all matched files/dirs in a given glob when using positional arguments", () ->
+	test "Will execute a given command on all matched files/dirs in a given glob when using positional arguments", ->
 		execa(bin, ['test/samples/sass/css/*', 'echo {{base}} >> test/temp/two']).then (err) ->
-			result = fs.readFileSync 'test/temp/two', {encoding:'utf8'}
+			result = fs.readFileSync 'test/temp/two', encoding: 'utf8'
 			resultLines = result.split('\n').filter (validLine) -> validLine
 
 			expect(resultLines.length).to.equal 3
@@ -52,10 +51,10 @@ suite "ForEach-cli", () ->
 
 
 
-	test "Placeholders can be used in the command which will be dynamically filled according to the subject path", () ->
+	test "Placeholders can be used in the command which will be dynamically filled according to the subject path", ->
 		execa(bin, ['--glob', 'test/samples/sass/css/**/*',
 					'--execute', 'echo "{{name}} {{ext}} {{base}} {{reldir}} {{path}} {{dir}}" >> test/temp/three']).then (err) ->
-						result = fs.readFileSync 'test/temp/three', {encoding:'utf8'}
+						result = fs.readFileSync 'test/temp/three', encoding: 'utf8'
 
 						parsedResult = parsePlaceholdersResult(result)
 
@@ -120,10 +119,10 @@ suite "ForEach-cli", () ->
 							expect(m.path).to.equal expected.path
 							expect(m.dir).to.equal expected.dir
 
-	test "Placeholders can be denoted either with dual curly braces or a hash + single curly brace wrap", () ->
+	test "Placeholders can be denoted either with dual curly braces or a hash + single curly brace wrap", ->
 		execa(bin, ['--glob', 'test/samples/sass/css/**/*',
 					'--execute', 'echo "#{name} #{ext} #{base} #{reldir} #{path} #{dir}" >> test/temp/four']).then (err) ->
-						result = fs.readFileSync 'test/temp/four', {encoding:'utf8'}
+						result = fs.readFileSync 'test/temp/four', encoding: 'utf8'
 						parsedResult = parsePlaceholdersResult(result)
 
 						# Check length
@@ -187,10 +186,10 @@ suite "ForEach-cli", () ->
 							expect(m.dir).to.equal expected.dir
 
 
-	test "Will execute a given command on all matched files/dirs in a given glob with ignore option", () ->
+	test "Will execute a given command on all matched files/dirs in a given glob with ignore option", ->
 		execa(bin, ['--glob', 'test/samples/sass/css/*', '--ignore', '**/*copy*',
 					'--execute', 'echo {{base}} >> test/temp/five']).then (err) ->
-						result = fs.readFileSync 'test/temp/five', {encoding:'utf8'}
+						result = fs.readFileSync 'test/temp/five', encoding: 'utf8'
 						resultLines = result.split('\n').filter (validLine) -> validLine
 
 						expect(resultLines.length).to.equal 2
@@ -198,10 +197,10 @@ suite "ForEach-cli", () ->
 						expect(resultLines.find (line) -> line == 'main.css').to.be.truthy
 
 
-	test "Will execute a given command on all matched files in a given glob but ignoring the folders", () ->
+	test "Will execute a given command on all matched files in a given glob but ignoring the folders", ->
 		execa(bin, ['--glob', 'test/samples/sass/css/*', '--nodir', 'true',
 					'--execute', 'echo {{base}} >> test/temp/six']).then (err) ->
-						result = fs.readFileSync 'test/temp/six', {encoding:'utf8'}
+						result = fs.readFileSync 'test/temp/six', encoding: 'utf8'
 						resultLines = result.split('\n').filter (validLine) -> validLine
 
 						expect(resultLines.length).to.equal 2
@@ -209,10 +208,10 @@ suite "ForEach-cli", () ->
 						expect(resultLines.find (line) -> line == 'main.css').to.be.truthy
 
 
-	test "Will execute a given command on all matched `.css` files in a given glob with ** but ignoring the folders", () ->
+	test "Will execute a given command on all matched `.css` files in a given glob with ** but ignoring the folders", ->
 		execa(bin, ['--glob', 'test/samples/sass/css/**/*.css', '--nodir', 'true',
 					'--execute', 'echo {{base}} >> test/temp/seven']).then (err) ->
-						result = fs.readFileSync 'test/temp/seven', {encoding:'utf8'}
+						result = fs.readFileSync 'test/temp/seven', encoding: 'utf8'
 						resultLines = result.split('\n').filter (validLine) -> validLine
 
 						expect(resultLines.length).to.equal 3
@@ -222,10 +221,10 @@ suite "ForEach-cli", () ->
 
 
 	test "Will execute a given command on matched files that aren’t in the .gitignore
-			when --ignore-from-file=.gitignore is used", () ->
+			when --ignore-from-file=.gitignore is used", ->
 		execa(bin, ['--glob', 'test/samples/sass/css/**/*.css', '--ignore-from-file', '.gitignore',
-					'--execute', 'echo {{base}} >> test/temp/eight']).then (err) ->
-						result = fs.readFileSync 'test/temp/eight', {encoding:'utf8'}
+					'--execute', 'npx shx echo {{base}} >> test/temp/eight']).then (err) ->
+						result = fs.readFileSync 'test/temp/eight', encoding: 'utf8'
 						resultLines = result.split('\n').filter (validLine) -> validLine
 
 						###
@@ -239,10 +238,10 @@ suite "ForEach-cli", () ->
 						expect(resultLines[0].trim()).to.equal 'main.css'
 
 	test "Will execute a given command on matched files that aren’t in custom ignore file
-			when --ignore-from-file is provided", () ->
+			when --ignore-from-file is provided", ->
 		execa(bin, ['--glob', 'test/samples/sass/css/**/*.css', '--ignore-from-file', '.customignore',
 					'--execute', 'echo {{base}} >> test/temp/nine']).then (err) ->
-						result = fs.readFileSync 'test/temp/nine', {encoding:'utf8'}
+						result = fs.readFileSync 'test/temp/nine', encoding: 'utf8'
 						resultLines = result.split('\n').filter (validLine) -> validLine
 
 						###
@@ -257,9 +256,9 @@ suite "ForEach-cli", () ->
 						expect(resultLines.find (line) -> line.trim() == 'main.css').to.be.truthy
 						expect(resultLines.find (line) -> line.trim() == 'sub.css').to.be.truthy
 
-	test "Will execute command on all files when --ignore-from-file flag is not used (no ignore behavior)", () ->
+	test "Will execute command on all files when --ignore-from-file flag is not used (no ignore behavior)", ->
 		execa(bin, ['--glob', 'test/samples/sass/css/**/*.css', '--execute', 'echo {{base}} >> test/temp/ten']).then (err) ->
-			result = fs.readFileSync 'test/temp/ten', {encoding:'utf8'}
+			result = fs.readFileSync 'test/temp/ten', encoding: 'utf8'
 			resultLines = result.split('\n').filter (validLine) -> validLine
 
 			###
@@ -298,10 +297,10 @@ suite "ForEach-cli", () ->
 			# Save the output to a file for checking spinner characters
 			output = result.stdout + result.stderr
 			outputFile = 'test/temp/spinner_output_' + testName + '.txt'
-			fs.writeFileSync(outputFile, output, {encoding:'utf8'})
+			fs.writeFileSync(outputFile, output, encoding: 'utf8')
 
 			# Check if the output file contains any spinner characters at the beginning of lines
-			outputFromFile = fs.readFileSync(outputFile, {encoding:'utf8'})
+			outputFromFile = fs.readFileSync(outputFile, encoding: 'utf8')
 			lines = outputFromFile.split('\n')
 
 			# Different spinner chars for UNIX and Windows
@@ -323,15 +322,15 @@ suite "ForEach-cli", () ->
 				hasSpinnerChars: hasSpinnerChars
 
 
-	test "Will execute command with --no-spin flag without showing spinners", () ->
+	test "Will execute command with --no-spin flag without showing spinners", ->
 		runSpinnerTest(true, "no_spin").then (result) ->
 			# Check that no spinner characters appear when the argument “--no-spin” is used
 			if result.hasSpinnerChars
 				throw new Error("Spinner characters found when --no-spin was used: #{result.outputFromFile}")
 
 
-	test "Will find spinner characters when not using --no-spin flag", () ->
+	test "Will find spinner characters when not using --no-spin flag", ->
 		runSpinnerTest(false, "with_spin").then (result) ->
 			# The test verifies that spinner characters appear without the argument “--no-spin”
 			if not result.hasSpinnerChars
-				throw new Error("Spinner characters should appear when --no-spin is not used, but were not found in output")
+				throw new Error("Spinner characters should appear when --no-spin isn’t used, but weren’t found in output")

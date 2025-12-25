@@ -18,7 +18,9 @@ suppliedOptions =
 	'trim': args.t or args.trim
 	'forceColor': args.c or args.forceColor
 	'concurrent': args.C or args.concurrent
-	'spin': if args.spin != undefined then args.spin else true
+	'spin': args.spin
+	'watch': args.w or args.watch
+	'watch-file': args.W or args['watch-file']
 
 if requiresHelp or not suppliedOptions.glob or not suppliedOptions.command
 	yargs.getHelp().then (helpText) ->
@@ -29,5 +31,5 @@ if requiresHelp or not suppliedOptions.glob or not suppliedOptions.command
 
 require('./foreach')(suppliedOptions).then (result) ->
 	process.exit(0)
-.catch () ->
+.catch ->
 	process.exit(1)

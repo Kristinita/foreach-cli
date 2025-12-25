@@ -2,3 +2,11 @@ node_modules/
 coverage/
 *.sublime-*
 npm-debug.log
+
+# [INFO] The metadata file of foreach-cli when it launched with the option “--watch”
+.foreach-watch.json
+
+# [INFO] Flow files and folders
+.flowconfig
+flow-typed/
+flow-typed.config.json

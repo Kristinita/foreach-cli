@@ -1,18 +1,19 @@
-fs = require('fs')
-path = require('path')
-{glob} = require('glob')
+fs = require('node:fs')
+path = require('node:path')
+{ glob } = require('glob')
 walk = require('ignore-walk')
 chalk = require('chalk')
 Listr = require '@danielkalen/listr'
-exec = require('child_process').exec
+exec = require('node:child_process').exec
 regEx = require './regex'
+{ getListOfUnwatchedNewAndModifiedFiles } = require './watch-handler'
 
 
 module.exports = (options) -> new Promise (finish, fail) ->
 	finalLogs = 'log':{}, 'error':{}
 
 	# Helper function to create glob options from current options
-	createGlobOptions = () ->
+	createGlobOptions = ->
 		globOptions = {}
 		if options.ignore then globOptions.ignore = options.ignore
 		if options.nodir then globOptions.nodir = options.nodir
@@ -37,9 +38,12 @@ module.exports = (options) -> new Promise (finish, fail) ->
 				try
 					# Get all non-ignored files in the project and create a Set for fast lookup with normalized paths
 					nonIgnoredFiles = new Set(walk.sync(walkOptions).map (file) -> file.split(path.win32.sep).join(path.posix.sep))
-					# Filter glob results to only include files that are NOT ignored
-					filteredFiles = globFiles.filter (file) -> nonIgnoredFiles.has(file.split(path.win32.sep).join(path.posix.sep))
-					createTasksAndExecute(filteredFiles)
+					# Filter glob results to solely include files that aren’t ignored
+					nonIgnoredFilteredFiles = globFiles.filter (file) ->
+						nonIgnoredFiles.has(file.split(path.win32.sep).join(path.posix.sep))
+					# Filter files based on watch option
+					finalFilteredFiles = getListOfUnwatchedNewAndModifiedFiles(nonIgnoredFilteredFiles, options)
+					createTasksAndExecute(finalFilteredFiles)
 				catch err
 					handleError(err)
 			.catch (err) ->
@@ -49,7 +53,9 @@ module.exports = (options) -> new Promise (finish, fail) ->
 
 		glob(options.glob, globOptions)
 			.then (files) ->
-				createTasksAndExecute(files)
+				# Filter files based on watch option
+				filteredFiles = getListOfUnwatchedNewAndModifiedFiles(files, options)
+				createTasksAndExecute(filteredFiles)
 			.catch (err) ->
 				handleError(err)
 
@@ -58,14 +64,14 @@ module.exports = (options) -> new Promise (finish, fail) ->
 			# If the option “--no-spin” is used, output execution messages but run commands in parallel if concurrent is true
 			# Show initial execution messages first
 			for file in files
-				console.log "Executing command for the file: #{chalk.dim(file)}"
+				console.log "Executing the subcommand for the file #{chalk.dim(file)}"
 
 			# Helper function to handle command result
 			handleCommandResult = (file) ->
 				executeCommand(file)
-					.then(() -> console.log "√ The command was successfully executed for the file: #{chalk.dim(file)}")
+					.then( -> console.log "√ The subcommand was successfully executed for the file #{chalk.dim(file)}")
 					.catch((error) ->
-						console.log "× The command was executed with error(s) for the file: #{chalk.dim(file)}"
+						console.log "× The subcommand was executed with error(s) for the file #{chalk.dim(file)}"
 						# Continue execution despite errors
 						Promise.resolve()
 					)
@@ -76,7 +82,7 @@ module.exports = (options) -> new Promise (finish, fail) ->
 				sequencePromise = Promise.resolve()
 				for file in files
 					do (file) ->  # Create closure to capture the current file value
-						sequencePromise = sequencePromise.then(() -> handleCommandResult(file))
+						sequencePromise = sequencePromise.then( -> handleCommandResult(file))
 				sequencePromise.then(outputFinalLogs, outputFinalLogs)
 			else
 				# Run commands in parallel using “Promise.all” (default behavior)
@@ -88,8 +94,8 @@ module.exports = (options) -> new Promise (finish, fail) ->
 				listrOptions.concurrent = options.concurrent
 
 			tasks = new Listr files.map((file) ->
-				title: "Executing command for the file: #{chalk.dim(file)}"
-				task: () -> executeCommand(file)
+				title: "Executing the subcommand for the file #{chalk.dim(file)}"
+				task: -> executeCommand(file)
 			), listrOptions
 
 			tasks.run().then(outputFinalLogs, outputFinalLogs)
@@ -182,14 +188,14 @@ module.exports = (options) -> new Promise (finish, fail) ->
 
 
 
-	outputFinalLogs = () -> if Object.keys(finalLogs.log).length or Object.keys(finalLogs.error).length
+	outputFinalLogs = -> if Object.keys(finalLogs.log).length or Object.keys(finalLogs.error).length
 		process.stdout.write '\n\n'
 		for file,message of finalLogs.log
-			console.log chalk.bgWhite.black.bold("Output")+' '+chalk.dim(file)
+			console.log chalk.bgWhite.black.bold("Output for the subcommand executed for the file")+' '+chalk.dim(file)
 			console.log formatOutputMessage(message)
 
 		for file,message of finalLogs.error
-			console.log chalk.bgRed.white.bold("Error")+' '+chalk.dim(file)
+			console.log chalk.bgRed.white.bold("Error for the subcommand executed for the file")+' '+chalk.dim(file)
 			console.log formatOutputMessage(message)
 
 		if Object.keys(finalLogs.error).length
