@@ -1,4 +1,6 @@
 yargs = require('yargs')
+{ styleText } = require('node:util')
+
 yargs
 	.usage(require('./cliUsage').usage)
 	.options(require './cliOptions')
@@ -32,4 +34,9 @@ if requiresHelp or not suppliedOptions.glob or not suppliedOptions.command
 require('./foreach')(suppliedOptions).then (result) ->
 	process.exit(0)
 .catch ->
-	process.exit(1)
+	console.error(
+		styleText(['red'],
+		'foreach-cli exits with the exit code 4, because any of its subcommands exit with non-zero exit codes.
+		See your terminal output to determine where the errors are.')
+	)
+	process.exit(4)

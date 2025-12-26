@@ -34,7 +34,7 @@ suite "ForEach-cli", ->
 
 			# Because there is 3, and all of them are within the list of 3. Then each of them makes a line
 			expect(resultLines.length).to.equal 3
-			expect(resultLines.find (line) -> line == 'foldr.css').to.be.truthy
+			expect(resultLines.find (line) -> line == 'folder.css').to.be.truthy
 			expect(resultLines.find (line) -> line == 'main.copy.css').to.be.truthy
 			expect(resultLines.find (line) -> line == 'main.css').to.be.truthy
 
@@ -45,7 +45,7 @@ suite "ForEach-cli", ->
 			resultLines = result.split('\n').filter (validLine) -> validLine
 
 			expect(resultLines.length).to.equal 3
-			expect(resultLines.find (line) -> line == 'foldr.css').to.be.truthy
+			expect(resultLines.find (line) -> line == 'folder.css').to.be.truthy
 			expect(resultLines.find (line) -> line == 'main.copy.css').to.be.truthy
 			expect(resultLines.find (line) -> line == 'main.css').to.be.truthy
 
@@ -63,8 +63,8 @@ suite "ForEach-cli", ->
 
 						# Check the paths
 						[
-							'test/samples/sass/css/foldr.css',
-							'test/samples/sass/css/foldr.css/sub.css',
+							'test/samples/sass/css/folder.css',
+							'test/samples/sass/css/folder.css/sub.css',
 							'test/samples/sass/css/main.copy.css',
 							'test/samples/sass/css/main.css'
 						].forEach (path) -> expect(result.includes(path)).to.be.truthy
@@ -76,21 +76,21 @@ suite "ForEach-cli", ->
 						expectedResults = [
 							# folder file match
 							{
-								path: 'test/samples/sass/css/foldr.css',
-								name: 'foldr',
+								path: 'test/samples/sass/css/folder.css',
+								name: 'folder',
 								ext: '.css',
-								base: 'foldr.css',
+								base: 'folder.css',
 								reldir: '',
 								dir: "#{normalizedCwd}/test/samples/sass/css" # because a folder
 							},
 							# ✨ Nested folder, and reldir
 							{
-								path: 'test/samples/sass/css/foldr.css/sub.css',
+								path: 'test/samples/sass/css/folder.css/sub.css',
 								name: 'sub',
 								ext: '.css',
 								base: 'sub.css',
-								reldir: 'foldr.css',
-								dir: "#{normalizedCwd}/test/samples/sass/css/foldr.css"
+								reldir: 'folder.css',
+								dir: "#{normalizedCwd}/test/samples/sass/css/folder.css"
 							},
 							{
 								path: 'test/samples/sass/css/main.copy.css',
@@ -130,8 +130,8 @@ suite "ForEach-cli", ->
 
 						# Check the paths
 						[
-							'test/samples/sass/css/foldr.css',
-							'test/samples/sass/css/foldr.css/sub.css',
+							'test/samples/sass/css/folder.css',
+							'test/samples/sass/css/folder.css/sub.css',
 							'test/samples/sass/css/main.copy.css',
 							'test/samples/sass/css/main.css'
 						].forEach (path) -> expect(result.includes(path)).to.be.truthy
@@ -142,21 +142,21 @@ suite "ForEach-cli", ->
 						expectedResults = [
 							# folder file match
 							{
-								path: 'test/samples/sass/css/foldr.css',
-								name: 'foldr',
+								path: 'test/samples/sass/css/folder.css',
+								name: 'folder',
 								ext: '.css',
-								base: 'foldr.css',
+								base: 'folder.css',
 								reldir: '',
 								dir: "#{normalizedCwd}/test/samples/sass/css" # because a folder
 							},
 							# ✨ Nested folder, and reldir
 							{
-								path: 'test/samples/sass/css/foldr.css/sub.css',
+								path: 'test/samples/sass/css/folder.css/sub.css',
 								name: 'sub',
 								ext: '.css',
 								base: 'sub.css',
-								reldir: 'foldr.css',
-								dir: "#{normalizedCwd}/test/samples/sass/css/foldr.css"
+								reldir: 'folder.css',
+								dir: "#{normalizedCwd}/test/samples/sass/css/folder.css"
 							},
 							{
 								path: 'test/samples/sass/css/main.copy.css',
@@ -193,7 +193,7 @@ suite "ForEach-cli", ->
 						resultLines = result.split('\n').filter (validLine) -> validLine
 
 						expect(resultLines.length).to.equal 2
-						expect(resultLines.find (line) -> line == 'foldr.css').to.be.truthy
+						expect(resultLines.find (line) -> line == 'folder.css').to.be.truthy
 						expect(resultLines.find (line) -> line == 'main.css').to.be.truthy
 
 
@@ -228,7 +228,8 @@ suite "ForEach-cli", ->
 						resultLines = result.split('\n').filter (validLine) -> validLine
 
 						###
-						Should solely contain “main.css” since “main.copy.css” is ignored by pattern and “foldr.css” directory is ignored,
+						Should solely contain “main.css” since “main.copy.css” is ignored by pattern and
+						“folder.css” directory is ignored,
 						which also causes its contents (“sub.css”) to be ignored
 
 						[INFO] ignore-walk solely returns files, not directories
@@ -239,18 +240,18 @@ suite "ForEach-cli", ->
 
 	test "Will execute a given command on matched files that aren’t in custom ignore file
 			when --ignore-from-file is provided", ->
-		execa(bin, ['--glob', 'test/samples/sass/css/**/*.css', '--ignore-from-file', '.customignore',
+		execa(bin, ['--glob', 'test/samples/sass/css/**/*.css', '--ignore-from-file', '.custom-ignore',
 					'--execute', 'echo {{base}} >> test/temp/nine']).then (err) ->
 						result = fs.readFileSync 'test/temp/nine', encoding: 'utf8'
 						resultLines = result.split('\n').filter (validLine) -> validLine
 
 						###
-						Should contain “main.css”, “foldr.css” (directory), and “sub.css”
-						since solely “main.copy.css” is in “.customignore”
+						Should contain “main.css”, “folder.css” (directory), and “sub.css”
+						since solely “main.copy.css” is in “.custom-ignore”
 
 						[INFO] ignore-walk solely returns files, not directories,
-						therefore “foldr.css” not included despite being a directory.
-						We expect “main.css” (file) and “sub.css” (file from “foldr.css/sub.css”), “main.copy.css” is ignored
+						therefore “folder.css” not included despite being a directory.
+						We expect “main.css” (file) and “sub.css” (file from “folder.css/sub.css”), “main.copy.css” is ignored
 						###
 						expect(resultLines.length).to.equal 2
 						expect(resultLines.find (line) -> line.trim() == 'main.css').to.be.truthy
@@ -263,14 +264,14 @@ suite "ForEach-cli", ->
 
 			###
 			Should contain “.css” files and folders: “main.css” (file), “main.copy.css” (file),
-			“foldr.css” (folder), “sub.css” (from “foldr.css/sub.css”)
+			“folder.css” (folder), “sub.css” (from “folder.css/sub.css”)
 
 			[INFO] glob template includes directories whose names end with “.css”
 			###
 			expect(resultLines.length).to.equal 4
 			expect(resultLines.find (line) -> line.trim() == 'main.css').to.be.truthy
 			expect(resultLines.find (line) -> line.trim() == 'main.copy.css').to.be.truthy
-			expect(resultLines.find (line) -> line.trim() == 'foldr.css').to.be.truthy
+			expect(resultLines.find (line) -> line.trim() == 'folder.css').to.be.truthy
 			expect(resultLines.find (line) -> line.trim() == 'sub.css').to.be.truthy
 
 

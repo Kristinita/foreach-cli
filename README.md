@@ -219,3 +219,10 @@ foreach-cli creates the unique identifiers for the each combination of glob temp
 Use this options solely with the `--watch` option.
 
 Define the path to the file with the `--watch` recordings. Use this option if you need a different path and/or filename instead of default `.foreach-watch.json` in the root folder of your project.
+
+## 5. Exit codes
+
+foreach-cli returns:
+
+1. Exit code 0, if all subcommands exits with the exit code 0.
+1. Exit code 4, if any subcommands exit with any non-zero exit codes.
