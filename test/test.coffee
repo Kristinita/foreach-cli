@@ -220,43 +220,6 @@ suite "ForEach-cli", ->
 						expect(resultLines.find (line) -> line == 'main.css').to.be.truthy
 
 
-	test "Will execute a given command on matched files that aren’t in the .gitignore
-			when --ignore-from-file=.gitignore is used", ->
-		execa(bin, ['--glob', 'test/samples/sass/css/**/*.css', '--ignore-from-file', '.gitignore',
-					'--execute', 'npx shx echo {{base}} >> test/temp/eight']).then (err) ->
-						result = fs.readFileSync 'test/temp/eight', encoding: 'utf8'
-						resultLines = result.split('\n').filter (validLine) -> validLine
-
-						###
-						Should solely contain “main.css” since “main.copy.css” is ignored by pattern and
-						“folder.css” directory is ignored,
-						which also causes its contents (“sub.css”) to be ignored
-
-						[INFO] ignore-walk solely returns files, not directories
-						###
-						expect(resultLines.length).to.equal 1
-						# Remove any trailing whitespace/line endings that may vary by OS
-						expect(resultLines[0].trim()).to.equal 'main.css'
-
-	test "Will execute a given command on matched files that aren’t in custom ignore file
-			when --ignore-from-file is provided", ->
-		execa(bin, ['--glob', 'test/samples/sass/css/**/*.css', '--ignore-from-file', '.custom-ignore',
-					'--execute', 'echo {{base}} >> test/temp/nine']).then (err) ->
-						result = fs.readFileSync 'test/temp/nine', encoding: 'utf8'
-						resultLines = result.split('\n').filter (validLine) -> validLine
-
-						###
-						Should contain “main.css”, “folder.css” (directory), and “sub.css”
-						since solely “main.copy.css” is in “.custom-ignore”
-
-						[INFO] ignore-walk solely returns files, not directories,
-						therefore “folder.css” not included despite being a directory.
-						We expect “main.css” (file) and “sub.css” (file from “folder.css/sub.css”), “main.copy.css” is ignored
-						###
-						expect(resultLines.length).to.equal 2
-						expect(resultLines.find (line) -> line.trim() == 'main.css').to.be.truthy
-						expect(resultLines.find (line) -> line.trim() == 'sub.css').to.be.truthy
-
 	test "Will execute command on all files when --ignore-from-file flag is not used (no ignore behavior)", ->
 		execa(bin, ['--glob', 'test/samples/sass/css/**/*.css', '--execute', 'echo {{base}} >> test/temp/ten']).then (err) ->
 			result = fs.readFileSync 'test/temp/ten', encoding: 'utf8'

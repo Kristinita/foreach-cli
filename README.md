@@ -32,13 +32,13 @@ foreach --glob <glob> --execute <command to execute>
 **Executing Command Placeholders**
 
 ```text
-"path"  -  full path and filename
-"root"  -  file root
-"dir"   -  path without the filename
-"reldir"-  directory name of file relative to the glob provided
-"base"  -  file name and extension
-"ext"   -  just file extension
-"name"  -  just file name
+"path"   - full path and filename
+"root"   - file root
+"dir"    - path without the filename
+"reldir" - directory name of file relative to the glob provided
+"base"   - file name and extension
+"ext"    - file extension
+"name"   - file name
 ```
 
 **Examples**
@@ -50,9 +50,15 @@ foreach --glob "*/*.jpg" --execute "convert #{path}.jpg #{dir}/#{name}.converted
 
 ## 4. Options
 
-### 4.1. `--watch`, `-w`
+### 4.1. `--ignore-from-file`, `-f` (string)
 
-#### 4.1.1. Usage
+foreach-cli with this option ignores patterns from the file that’s the value of the option. For example, if `--ignore-from-file=.gitignore`, foreach-cli ignores all files matched in patterns of the file `.gitignore`. An ignore file doesn’t have to be the `.gitignore`. You can set the values `.bzrignore`, `.hgignore` or any other filenames.
+
+foreach-cli implements this option using [**ignore-walk**](https://github.com/npm/ignore-walk).
+
+### 4.2. `--watch`, `-w` (no value)
+
+#### 4.2.1. Usage
 
 foreach-cli with this option launches a subcommand solely for new and modified files since the last run of foreach-cli with the same identifier — the combination of glob template and subcommand. foreach-cli with the `--watch` unwatches files deleted since the last run and doesn’t launch a subcommand for them. foreach-cli with the `--watch` doesn’t watch files ignored through `--ignore` and `--ignore-from-file` options.
 
@@ -107,7 +113,7 @@ shx rm FirstFile.coffee
 foreach --execute "shx echo This is the file {{path}}" --glob "*.coffee" --watch
 ```
 
-#### 4.1.2. `.foreach-watch.json`
+#### 4.2.2. `.foreach-watch.json`
 
 When a user launches foreach-cli with the `--watch` argument first time, foreach-cli creates the file `.foreach-watch.json` in the root directory of a project. foreach-cli updates it during subsequent launches with the option `--watch`. It’s recommended to add `.foreach-watch.json` to the ignore file of your VCS (like `.gitignore`, `.bzrignore` or `.hgignore`). The structure of the `.foreach-watch.json` after launching commands from the previous section:
 
@@ -122,7 +128,7 @@ When a user launches foreach-cli with the `--watch` argument first time, foreach
 }
 ```
 
-#### 4.1.3. Execution recordings
+#### 4.2.3. Execution recordings
 
 foreach-cli with the `--watch` option watches identifiers — combinations of glob templates and subcommands. If a glob template and/or subcommand is different, foreach-cli watches files for a new identifier separately.
 
@@ -209,12 +215,12 @@ foreach --execute "shx echo This is the file {{path}}" --glob "*.coffee" --watch
 
 foreach-cli creates the unique identifiers for the each combination of glob template and subcommand in the file `.foreach-watch.json`.
 
-#### 4.1.4. Sources
+#### 4.2.4. Sources
 
 1. `lib/watch-handler.coffee` — the watch module.
 1. `test/watch.test.coffee` — the end-to-end tests for the `--watch` and `--watch-file` command-line arguments.
 
-### 4.2. `--watch-file`, `-W` (string)
+### 4.3. `--watch-file`, `-W` (string)
 
 Use this options solely with the `--watch` option.
 

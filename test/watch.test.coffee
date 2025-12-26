@@ -350,5 +350,7 @@ suite "Tests with the “--watch” argument", ->
 		expect(fs.existsSync(customWatchFile)).to.equal(true)
 		expect(fs.existsSync(defaultWatchFile)).to.equal(false)
 
-		# [INFO] Delete custom metadata file
+		# [INFO] Delete the custom metadata file
 		fs.rmSync(customWatchFile)
+
+module.exports = { splitTextIntoTrimmedLines }
